@@ -103,3 +103,25 @@ CREATE OR REPLACE VIEW posts_with_author AS
   FROM posts p
   JOIN users u ON u.id = p.author_id
   ORDER BY p.created_at DESC;
+
+-- ── Tabla: stories ────────────────────────────
+CREATE TABLE IF NOT EXISTS stories (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id   UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  image_url   TEXT        NOT NULL,
+  caption     TEXT        DEFAULT '',
+  expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '24 hours'),
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── Tabla: story_views ────────────────────────
+CREATE TABLE IF NOT EXISTS story_views (
+  story_id   UUID NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  viewer_id  UUID NOT NULL REFERENCES users(id)   ON DELETE CASCADE,
+  viewed_at  TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (story_id, viewer_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_stories_author   ON stories(author_id);
+CREATE INDEX IF NOT EXISTS idx_stories_expires  ON stories(expires_at);
+CREATE INDEX IF NOT EXISTS idx_story_views_story ON story_views(story_id);
