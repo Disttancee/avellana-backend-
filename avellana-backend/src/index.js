@@ -11,10 +11,29 @@ const app    = express();
 const server = http.createServer(app); // servidor HTTP compartido con WebSocket
 
 // ── Middlewares globales ──────────────────────
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5500",
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+].filter(Boolean);
+
 app.use(cors({
-  origin:      process.env.CLIENT_URL || "*",
-  credentials: true
+  origin: (origin, callback) => {
+    // Permitir sin origin (Postman, curl) y orígenes permitidos
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+      callback(null, true);
+    } else {
+      callback(null, true); // En producción aceptar todo por ahora
+    }
+  },
+  credentials: true,
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }));
+
+// Responder pre-flight OPTIONS
+app.options("*", cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
